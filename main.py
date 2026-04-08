@@ -14,7 +14,7 @@ from pathlib import Path
 import logger
 from apy import enviar_con_apy, flashcards_a_apy, verificar_apy
 from cli import parsear_argumentos
-from llm import verificar_ollama
+from llm import verificar_ollama, cerrar_ollama  # ← agregar cerrar_ollama
 from processor import procesar_nota
 
 
@@ -50,6 +50,7 @@ def main() -> None:
 
     if not flashcards:
         logger.error("No se generaron flashcards. Usa --debug para mas detalles.")
+        cerrar_ollama()  # ← cerrar antes de salir
         return
 
     # ── Envío a Anki o dry-run ─────────────────────────────────
@@ -73,6 +74,8 @@ def main() -> None:
     logger.separador()
     logger.resultado(f"Tiempo total: {total:.1f} segundos")
     logger.linea_final()
+    
+    cerrar_ollama()  # ← cerrar al final
 
 
 if __name__ == "__main__":
