@@ -8,7 +8,7 @@ from pathlib import Path
 
 import frontmatter
 
-import logger
+import ui
 from config import TARJETAS_POR_NOTA
 from llm import generar_flashcards
 
@@ -23,25 +23,25 @@ def procesar_nota(
     las flashcards correspondientes. Retorna una lista de dicts con
     las claves 'pregunta', 'respuesta' y 'fuente'.
     """
-    logger.seccion(f"Procesando: {ruta.name}")
+    ui.seccion(f"Procesando: {ruta.name}")
 
     titulo, contenido = _leer_nota(ruta)
     contenido = _limpiar_metadatos(contenido)
 
-    logger.info(f"Titulo detectado  : '{titulo}'")
-    logger.info(f"Longitud contenido: {len(contenido)} caracteres")
-    logger.info(f"Tarjetas a generar: {num_tarjetas}")
+    ui.info(f"Titulo detectado  : '{titulo}'")
+    ui.info(f"Longitud contenido: {len(contenido)} caracteres")
+    ui.info(f"Tarjetas a generar: {num_tarjetas}")
 
     if len(contenido.strip()) < 100:
-        logger.skip(f"'{titulo}' tiene menos de 100 caracteres, se omite")
+        ui.skip(f"'{titulo}' tiene menos de 100 caracteres, se omite")
         return []
 
     if debug:
-        logger.debug_line("Contenido tras limpiar frontmatter (primeros 500 chars):")
+        ui.debug_line("Contenido tras limpiar frontmatter (primeros 500 chars):")
         print(f"\n  {contenido[:500]}\n")
 
     flashcards = generar_flashcards(contenido, titulo, num_tarjetas, debug=debug)
-    logger.ok(f"{len(flashcards)} flashcards generadas exitosamente")
+    ui.ok(f"{len(flashcards)} flashcards generadas exitosamente")
 
     for fc in flashcards:
         fc["fuente"] = titulo
@@ -61,7 +61,7 @@ def _leer_nota(ruta: Path) -> tuple[str, str]:
         return titulo, post.content
 
     except Exception as e:
-        logger.warn(f"No se pudo parsear frontmatter ({e}), leyendo archivo completo")
+        ui.warn(f"No se pudo parsear frontmatter ({e}), leyendo archivo completo")
         contenido = ruta.read_text(encoding="utf-8")
         return _titulo_desde_ruta(ruta), contenido
 

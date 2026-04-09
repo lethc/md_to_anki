@@ -8,7 +8,7 @@ import time
 
 import ollama
 
-import logger
+import ui
 from cleaner import limpiar_markdown
 from config import MODEL, PROMPT_SISTEMA
 
@@ -18,14 +18,14 @@ _ollama_iniciado_por_nosotros = False
 
 def verificar_ollama() -> bool:
     """Verifica Ollama, lo inicia si es necesario."""
-    logger.seccion("Verificando conexion con Ollama")
+    ui.seccion("Verificando conexion con Ollama")
     
     # Intenta conectar
     if _conectar_ollama():
         return True
     
     # Si falla, intenta iniciar Ollama
-    logger.info("Ollama no responde, intentando iniciar...")
+    ui.info("Ollama no responde, intentando iniciar...")
     try:
         subprocess.Popen(
             ["ollama", "serve"],
@@ -38,14 +38,14 @@ def verificar_ollama() -> bool:
         if _conectar_ollama():
             global _ollama_iniciado_por_nosotros
             _ollama_iniciado_por_nosotros = True
-            logger.ok("Ollama iniciado correctamente")
+            ui.ok("Ollama iniciado correctamente")
             return True
         else:
-            logger.error("No se pudo iniciar Ollama")
+            ui.error("No se pudo iniciar Ollama")
             return False
             
     except FileNotFoundError:
-        logger.error("Comando 'ollama' no encontrado")
+        ui.error("Comando 'ollama' no encontrado")
         return False
 
 
@@ -54,12 +54,12 @@ def _conectar_ollama() -> bool:
     try:
         modelos = ollama.list()
         nombres = [m.model for m in modelos.models]
-        logger.ok("Ollama activo")
-        logger.info(f"Modelos disponibles: {', '.join(nombres)}")
+        ui.ok("Ollama activo")
+        ui.info(f"Modelos disponibles: {', '.join(nombres)}")
         
         if not any(MODEL in n for n in nombres):
-            logger.warn(f"El modelo '{MODEL}' no aparece en la lista")
-            logger.info(f"Descargalo con: ollama pull {MODEL}")
+            ui.warn(f"El modelo '{MODEL}' no aparece en la lista")
+            ui.info(f"Descargalo con: ollama pull {MODEL}")
         return True
     except Exception:
         return False
@@ -69,12 +69,12 @@ def cerrar_ollama() -> None:
     """Cierra Ollama si fue iniciado por nosotros."""
     global _ollama_iniciado_por_nosotros
     if _ollama_iniciado_por_nosotros:
-        logger.seccion("Cerrando Ollama")
+        ui.seccion("Cerrando Ollama")
         try:
             subprocess.run(["pkill", "-f", "ollama serve"], capture_output=True)
-            logger.ok("Ollama detenido")
+            ui.ok("Ollama detenido")
         except Exception:
-            logger.warn("No se pudo detener Ollama")
+            ui.warn("No se pudo detener Ollama")
         _ollama_iniciado_por_nosotros = False
 
 
@@ -84,21 +84,21 @@ def generar_flashcards(contenido: str, titulo: str, n: int, debug: bool = False)
     if len(contenido_limpio) > 3000:
         contenido_limpio = contenido_limpio[:3000] + "..."
     if debug:
-        logger.debug_line(f"Caracteres enviados al modelo: {len(contenido_limpio)}")
-        logger.debug_line("Contenido limpio completo:")
+        ui.debug_line(f"Caracteres enviados al modelo: {len(contenido_limpio)}")
+        ui.debug_line("Contenido limpio completo:")
         print(f"\n{contenido_limpio}\n")
     prompt = (
         f'Genera exactamente {n} flashcards sobre el siguiente tema: "{titulo}"\n\n'
         f"NOTAS:\n{contenido_limpio}\n\n"
         f"Recuerda: responde SOLO con el JSON, sin explicaciones adicionales."
     )
-    logger.paso(f"Enviando prompt al modelo '{MODEL}'...")
-    logger.paso("Generando respuesta, por favor espera...")
+    ui.paso(f"Enviando prompt al modelo '{MODEL}'...")
+    ui.paso("Generando respuesta, por favor espera...")
     texto_completo = _llamar_modelo(prompt)
     if texto_completo is None:
         return []
     if debug:
-        logger.debug_line("Respuesta raw del modelo (sin thinking):")
+        ui.debug_line("Respuesta raw del modelo (sin thinking):")
         print(f"\n{texto_completo}\n")
     return _parsear_json(texto_completo, debug)
 
@@ -129,9 +129,9 @@ def _llamar_modelo(prompt: str) -> str | None:
         print(f"\n  [  OK  ]  Completado en {elapsed:.1f}s ({token_count} tokens)")
     except Exception as e:
         print()
-        logger.error(f"Error llamando al modelo: {e}")
-        logger.info("Verifica que Ollama este corriendo : ollama serve")
-        logger.info("Verifica que el modelo este descargado: ollama list")
+        ui.error(f"Error llamando al modelo: {e}")
+        ui.info("Verifica que Ollama este corriendo : ollama serve")
+        ui.info("Verifica que el modelo este descargado: ollama list")
         return None
     return re.sub(r"<think>[\s\S]*?</think>", "", texto_completo).strip()
 
@@ -144,11 +144,11 @@ def _parsear_json(texto: str, debug: bool) -> list[dict]:
         datos = json.loads(texto)
         flashcards = datos.get("flashcards", [])
         if debug:
-            logger.debug_line("Flashcards parseadas:")
+            ui.debug_line("Flashcards parseadas:")
             print(json.dumps(flashcards, indent=2, ensure_ascii=False))
         return flashcards
     except json.JSONDecodeError as e:
-        logger.warn(f"Error parseando JSON: {e}")
-        logger.debug_line("Respuesta que fallo al parsear:")
+        ui.warn(f"Error parseando JSON: {e}")
+        ui.debug_line("Respuesta que fallo al parsear:")
         print(f"  {texto[:500]}")
         return []

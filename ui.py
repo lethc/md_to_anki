@@ -1,4 +1,4 @@
-# logger.py
+# ui.py
 # ── Utilidades de salida ASCII ─────────────────────────────────
 # Todas las funciones de impresión en consola están aquí
 # centralizadas para facilitar cambios de estilo.

@@ -11,7 +11,7 @@
 import time
 from pathlib import Path
 
-import logger
+import ui
 from apy import enviar_con_apy, flashcards_a_apy, verificar_apy
 from cli import parsear_argumentos
 from llm import verificar_ollama, cerrar_ollama  # ← agregar cerrar_ollama
@@ -22,15 +22,15 @@ def main() -> None:
     args = parsear_argumentos()
     ruta = Path(args.archivo)
 
-    logger.header("MD -> ANKI  //  Notas Markdown a Flashcards via apy")
+    ui.header("MD -> ANKI  //  Notas Markdown a Flashcards via apy")
 
     # ── Validaciones previas ───────────────────────────────────
     if not ruta.exists():
-        logger.error(f"Archivo no encontrado: {ruta}")
+        ui.error(f"Archivo no encontrado: {ruta}")
         return
 
     if ruta.suffix.lower() != ".md":
-        logger.error(f"El archivo debe tener extension .md: {ruta}")
+        ui.error(f"El archivo debe tener extension .md: {ruta}")
         return
 
     if not verificar_ollama():
@@ -49,15 +49,15 @@ def main() -> None:
     )
 
     if not flashcards:
-        logger.error("No se generaron flashcards. Usa --debug para mas detalles.")
+        ui.error("No se generaron flashcards. Usa --debug para mas detalles.")
         cerrar_ollama()  # ← cerrar antes de salir
         return
 
     # ── Envío a Anki o dry-run ─────────────────────────────────
     if args.dry_run:
-        logger.seccion("Dry-run: archivo que se enviaria a apy")
+        ui.seccion("Dry-run: archivo que se enviaria a apy")
         print(flashcards_a_apy(flashcards, args.deck, args.model, args.tags))
-        logger.warn("Dry-run activo: no se envio nada a Anki")
+        ui.warn("Dry-run activo: no se envio nada a Anki")
     else:
         enviar_con_apy(
             flashcards = flashcards,
@@ -71,9 +71,9 @@ def main() -> None:
 
     # ── Resumen final ──────────────────────────────────────────
     total = time.time() - inicio_total
-    logger.separador()
-    logger.resultado(f"Tiempo total: {total:.1f} segundos")
-    logger.linea_final()
+    ui.separador()
+    ui.resultado(f"Tiempo total: {total:.1f} segundos")
+    ui.linea_final()
     
     cerrar_ollama()  # ← cerrar al final
 

@@ -8,7 +8,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-import logger
+import ui
 
 
 def verificar_apy() -> bool:
@@ -16,15 +16,15 @@ def verificar_apy() -> bool:
     Comprueba que el comando 'apy' esté disponible en el sistema.
     Retorna True si está instalado.
     """
-    logger.seccion("Verificando instalacion de apy")
+    ui.seccion("Verificando instalacion de apy")
     try:
         r = subprocess.run(["apy", "--version"], capture_output=True, text=True)
-        logger.ok(f"apy encontrado: {r.stdout.strip() or 'version desconocida'}")
+        ui.ok(f"apy encontrado: {r.stdout.strip() or 'version desconocida'}")
         return True
     except FileNotFoundError:
-        logger.error("El comando 'apy' no fue encontrado")
-        logger.info("Instala apy con : pipx install apyanki")
-        logger.info("             o  : uv tool install apyanki")
+        ui.error("El comando 'apy' no fue encontrado")
+        ui.info("Instala apy con : pipx install apyanki")
+        ui.info("             o  : uv tool install apyanki")
         return False
 
 
@@ -69,12 +69,12 @@ def enviar_con_apy(
     'apy add-from-file'. Si output está definido, guarda también
     el archivo en esa ruta. Si sync es True, ejecuta 'apy sync'.
     """
-    logger.seccion("Generando archivo para apy")
+    ui.seccion("Generando archivo para apy")
 
     contenido_apy = flashcards_a_apy(flashcards, deck, model, tags)
 
     if debug:
-        logger.debug_line("Contenido del archivo apy:")
+        ui.debug_line("Contenido del archivo apy:")
         print(contenido_apy)
 
     archivo_para_apy, tmp = _preparar_archivo(contenido_apy, output)
@@ -114,7 +114,7 @@ def _preparar_archivo(
     if output:
         ruta_out = Path(output)
         ruta_out.write_text(contenido, encoding="utf-8")
-        logger.ok(f"Archivo guardado en: {ruta_out}")
+        ui.ok(f"Archivo guardado en: {ruta_out}")
         return str(ruta_out), None
 
     tmp = tempfile.NamedTemporaryFile(
@@ -122,44 +122,44 @@ def _preparar_archivo(
     )
     tmp.write(contenido)
     tmp.flush()
-    logger.info(f"Archivo temporal: {tmp.name}")
+    ui.info(f"Archivo temporal: {tmp.name}")
     return tmp.name, tmp
 
 
 def _ejecutar_add(archivo: str, output: str | None) -> None:
-    logger.seccion("Enviando flashcards a Anki via apy")
+    ui.seccion("Enviando flashcards a Anki via apy")
     cmd = ["apy", "add-from-file", archivo]
-    logger.info(f"Ejecutando: {' '.join(cmd)}")
+    ui.info(f"Ejecutando: {' '.join(cmd)}")
 
     try:
         r = subprocess.run(cmd, capture_output=True, text=True)
         if r.returncode == 0:
-            logger.ok("Flashcards añadidas correctamente a Anki")
+            ui.ok("Flashcards añadidas correctamente a Anki")
             if r.stdout.strip():
-                logger.info(r.stdout.strip())
+                ui.info(r.stdout.strip())
         else:
-            logger.error("apy reporto un error al añadir las notas")
-            logger.warn(r.stderr.strip() or "(sin mensaje de error)")
+            ui.error("apy reporto un error al añadir las notas")
+            ui.warn(r.stderr.strip() or "(sin mensaje de error)")
 
     except FileNotFoundError:
-        logger.error("El comando 'apy' no fue encontrado en el sistema")
-        logger.info("Instala apy con: pipx install apyanki")
+        ui.error("El comando 'apy' no fue encontrado en el sistema")
+        ui.info("Instala apy con: pipx install apyanki")
         if not output:
-            logger.info(f"El archivo generado sigue disponible en: {archivo}")
+            ui.info(f"El archivo generado sigue disponible en: {archivo}")
 
 
 def _ejecutar_sync() -> None:
-    logger.seccion("Sincronizando con AnkiWeb via apy")
+    ui.seccion("Sincronizando con AnkiWeb via apy")
     cmd = ["apy", "sync"]
-    logger.info(f"Ejecutando: {' '.join(cmd)}")
+    ui.info(f"Ejecutando: {' '.join(cmd)}")
 
     try:
         r = subprocess.run(cmd, capture_output=True, text=True)
         if r.returncode == 0:
-            logger.ok("Sincronizacion completada")
+            ui.ok("Sincronizacion completada")
         else:
-            logger.warn("apy sync reporto un problema")
-            logger.warn(r.stderr.strip() or "(sin mensaje)")
+            ui.warn("apy sync reporto un problema")
+            ui.warn(r.stderr.strip() or "(sin mensaje)")
 
     except FileNotFoundError:
-        logger.error("No se pudo ejecutar 'apy sync'")
+        ui.error("No se pudo ejecutar 'apy sync'")
