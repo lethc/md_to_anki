@@ -6,8 +6,6 @@
 import re
 from pathlib import Path
 
-import frontmatter
-
 import ui
 from config import TARJETAS_POR_NOTA
 from llm import generar_flashcards
@@ -51,19 +49,30 @@ def procesar_nota(
 
 def _leer_nota(ruta: Path) -> tuple[str, str]:
     """
-    Intenta leer el frontmatter YAML del archivo.
-    Si falla, lee el archivo completo como texto plano.
+    Lee el archivo y extrae el título del frontmatter si existe.
+    Si no hay frontmatter, usa el nombre del archivo como título.
     Retorna (titulo, contenido).
     """
-    try:
-        post = frontmatter.load(str(ruta))
-        titulo = post.get("title", _titulo_desde_ruta(ruta))
-        return titulo, post.content
-
-    except Exception as e:
-        ui.warn(f"No se pudo parsear frontmatter ({e}), leyendo archivo completo")
-        contenido = ruta.read_text(encoding="utf-8")
-        return _titulo_desde_ruta(ruta), contenido
+    contenido = ruta.read_text(encoding="utf-8")
+    titulo = _titulo_desde_ruta(ruta)  # valor por defecto
+    
+    # Buscar frontmatter YAML (bloque entre --- y ---)
+    if contenido.startswith('---'):
+        partes = contenido.split('---', 2)
+        if len(partes) >= 3:
+            yaml_block = partes[1]
+            contenido = partes[2].strip()
+            
+            # Extraer título del YAML manualmente
+            for linea in yaml_block.split('\n'):
+                linea = linea.strip()
+                if linea.lower().startswith('title:'):
+                    titulo = linea.split(':', 1)[1].strip()
+                    # Eliminar comillas si existen
+                    titulo = titulo.strip('"\'').strip()
+                    break
+    
+    return titulo, contenido
 
 
 def _limpiar_metadatos(contenido: str) -> str:
@@ -86,4 +95,5 @@ def _limpiar_metadatos(contenido: str) -> str:
 
 
 def _titulo_desde_ruta(ruta: Path) -> str:
+    """Convierte el nombre del archivo en un título legible."""
     return ruta.stem.replace("-", " ").replace("_", " ")
