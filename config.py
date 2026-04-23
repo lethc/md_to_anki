@@ -2,8 +2,13 @@
 # ── Configuración global ───────────────────────────────────────
 # Cambia estos valores según tus preferencias.
 
-MODEL             = "qwen3.5:0.8b"  # modelo Ollama a usar
-TARJETAS_POR_NOTA = 5                 # flashcards generadas por nota
+# ── API externa ────────────────────────────────────────────────
+API_KEY           = "sk-..."
+API_URL           = "https://openrouter.ai/api/v1/chat/completions"
+MODEL             = "openrouter/free"
+
+# ── Anki / apy ─────────────────────────────────────────────────
+TARJETAS_POR_NOTA = 10                 # flashcards generadas por nota
 APY_DECK          = "Default"         # deck de destino en Anki
 APY_MODEL         = "Basic"           # tipo de nota en Anki
 APY_TAGS          = ""                # etiquetas separadas por espacio

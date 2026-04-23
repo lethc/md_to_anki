@@ -14,7 +14,7 @@ from pathlib import Path
 import ui
 from apy import enviar_con_apy, flashcards_a_apy, verificar_apy
 from cli import parsear_argumentos
-from llm import verificar_ollama, cerrar_ollama  # ← agregar cerrar_ollama
+from llm import verificar_api, generar_flashcards
 from processor import procesar_nota
 
 
@@ -33,7 +33,7 @@ def main() -> None:
         ui.error(f"El archivo debe tener extension .md: {ruta}")
         return
 
-    if not verificar_ollama():
+    if not verificar_api():
         return
 
     if not args.dry_run and not verificar_apy():
@@ -50,7 +50,6 @@ def main() -> None:
 
     if not flashcards:
         ui.error("No se generaron flashcards. Usa --debug para mas detalles.")
-        cerrar_ollama()  # ← cerrar antes de salir
         return
 
     # ── Envío a Anki o dry-run ─────────────────────────────────
@@ -74,8 +73,6 @@ def main() -> None:
     ui.separador()
     ui.resultado(f"Tiempo total: {total:.1f} segundos")
     ui.linea_final()
-    
-    cerrar_ollama()  # ← cerrar al final
 
 
 if __name__ == "__main__":
