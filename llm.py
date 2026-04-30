@@ -99,7 +99,7 @@ def _headers() -> dict:
 
 def _llamar_modelo(prompt: str) -> str | None:
     body = {
-        "model":   MODEL,
+        "model":      MODEL,
         "max_tokens": 2048,
         "messages": [
             {"role": "system", "content": PROMPT_SISTEMA},
@@ -133,13 +133,50 @@ def _llamar_modelo(prompt: str) -> str | None:
         return None
 
 
-def _parsear_json(texto: str, debug: bool) -> list[dict]:
-    try:
-        texto = texto.strip()
-        texto = re.sub(r"^```json\s*", "", texto)
-        texto = re.sub(r"\s*```$",     "", texto)
+def _extraer_json(texto: str) -> str:
+    """
+    Extrae el bloque JSON de la respuesta del modelo de forma robusta.
+    El modelo puede devolver el JSON envuelto en ```json ... ``` o suelto.
+    No usa regex sobre el contenido completo para no cortar fences de código
+    que estén dentro de los valores del JSON.
+    """
+    texto = texto.strip()
 
-        datos      = json.loads(texto)
+    # Caso 1: empieza directamente con { — JSON suelto
+    if texto.startswith("{"):
+        return texto
+
+    # Caso 2: envuelto en ```json ... ```
+    # Buscamos solo la primera línea de apertura y la última línea de cierre
+    lineas = texto.splitlines()
+
+    inicio = None
+    for i, linea in enumerate(lineas):
+        if linea.strip() in ("```json", "```"):
+            inicio = i + 1
+            break
+
+    if inicio is None:
+        return texto  # devolver tal cual y dejar que json.loads falle con buen mensaje
+
+    # Buscar el cierre ``` desde el final hacia atrás
+    fin = None
+    for i in range(len(lineas) - 1, inicio - 1, -1):
+        if lineas[i].strip() == "```":
+            fin = i
+            break
+
+    if fin is None:
+        return "\n".join(lineas[inicio:])  # sin cierre, tomamos hasta el final
+
+    return "\n".join(lineas[inicio:fin])
+
+
+def _parsear_json(texto: str, debug: bool) -> list[dict]:
+
+    try:
+        json_str   = _extraer_json(texto)
+        datos      = json.loads(json_str)
         flashcards = datos.get("flashcards", [])
 
         if debug:

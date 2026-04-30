@@ -2,13 +2,30 @@
 # ── Limpieza de contenido Markdown ────────────────────────────
 # Elimina sintaxis de Markdown y patrones específicos de Obsidian
 # para dejar solo el texto plano que el LLM necesita leer.
+# Los bloques de código se conservan intactos, incluyendo sus
+# comentarios internos, para que el modelo pueda generar
+# flashcards sobre ellos.
 
 import re
 
 
 def limpiar_markdown(texto: str) -> str:
-    # Eliminar bloques de código
-    texto = re.sub(r"```[\s\S]*?```", "", texto)
+    # ── Paso 1: extraer y proteger bloques de código ───────────
+    # Los guardamos temporalmente para que las reglas de limpieza
+    # posteriores no toquen su contenido (ej: # dentro de Python/bash
+    # no debe tratarse como encabezado Markdown).
+    bloques_codigo = {}
+    contador = [0]
+
+    def guardar_bloque(m):
+        clave = f"\x00CODEBLOCK{contador[0]}\x00"
+        bloques_codigo[clave] = m.group(0)
+        contador[0] += 1
+        return clave
+
+    texto = re.sub(r"```[\s\S]*?```", guardar_bloque, texto)
+
+    # ── Paso 2: limpieza normal de Markdown/Obsidian ───────────
 
     # Eliminar callouts de Obsidian >[!NOTE], >[!INFO], >[!WARNING], etc.
     texto = re.sub(r">\s*\[!.*?\].*", "", texto)
@@ -25,6 +42,7 @@ def limpiar_markdown(texto: str) -> str:
     texto = re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", texto)
 
     # Eliminar encabezados # conservando el texto
+    # (solo aplica fuera de bloques de código gracias al paso 1)
     texto = re.sub(r"^#{1,6}\s+", "", texto, flags=re.MULTILINE)
 
     # Eliminar negritas y cursivas conservando el texto
@@ -45,5 +63,9 @@ def limpiar_markdown(texto: str) -> str:
 
     # Colapsar múltiples líneas vacías en una sola
     texto = re.sub(r"\n{3,}", "\n\n", texto)
+
+    # ── Paso 3: restaurar bloques de código ───────────────────
+    for clave, bloque in bloques_codigo.items():
+        texto = texto.replace(clave, bloque)
 
     return texto.strip()
