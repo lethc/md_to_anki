@@ -19,6 +19,7 @@ class Argumentos:
     deck:         str
     model:        str
     tags:         str
+    instrucciones: str | None
     sync:         bool
     dry_run:      bool
     debug:        bool
@@ -66,6 +67,17 @@ def parsear_argumentos() -> Argumentos:
         help="Etiquetas separadas por espacio (default: ninguna)",
     )
     parser.add_argument(
+        "-i", "--instrucciones",
+        type=str,
+        default=None,
+        help=(
+            "Instrucciones adicionales para el modelo sobre como generar\n"
+            "las flashcards o en que enfocarse de la nota "
+            "(ej: 'enfocate solo en las formulas' o "
+            "'crea las preguntas en ingles')"
+        ),
+    )
+    parser.add_argument(
         "--sync",
         action="store_true",
         help="Ejecutar 'apy sync' para sincronizar con AnkiWeb al terminar",
@@ -90,6 +102,7 @@ def parsear_argumentos() -> Argumentos:
         deck         = args.deck,
         model        = args.model,
         tags         = args.tags,
+        instrucciones = args.instrucciones,
         sync         = args.sync,
         dry_run      = args.dry_run,
         debug        = args.debug,

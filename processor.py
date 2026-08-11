@@ -14,6 +14,7 @@ from llm import generar_flashcards
 def procesar_nota(
     ruta: Path,
     num_tarjetas: int = TARJETAS_POR_NOTA,
+    instrucciones: str | None = None,
     debug: bool = False,
 ) -> list[dict]:
     """
@@ -29,6 +30,8 @@ def procesar_nota(
     ui.info(f"Titulo detectado  : '{titulo}'")
     ui.info(f"Longitud contenido: {len(contenido)} caracteres")
     ui.info(f"Tarjetas a generar: {num_tarjetas}")
+    if instrucciones:
+        ui.info(f"Instrucciones extra: '{instrucciones}'")
 
     if len(contenido.strip()) < 100:
         ui.skip(f"'{titulo}' tiene menos de 100 caracteres, se omite")
@@ -38,7 +41,11 @@ def procesar_nota(
         ui.debug_line("Contenido tras limpiar frontmatter (primeros 500 chars):")
         print(f"\n  {contenido[:500]}\n")
 
-    flashcards = generar_flashcards(contenido, titulo, num_tarjetas, debug=debug)
+    flashcards = generar_flashcards(
+        contenido, titulo, num_tarjetas,
+        instrucciones=instrucciones,
+        debug=debug,
+    )
     ui.ok(f"{len(flashcards)} flashcards generadas exitosamente")
 
     for fc in flashcards:

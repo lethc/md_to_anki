@@ -55,6 +55,7 @@ def generar_flashcards(
     contenido: str,
     titulo: str,
     n: int,
+    instrucciones: str | None = None,
     debug: bool = False,
 ) -> list[dict]:
     contenido_limpio = limpiar_markdown(contenido)
@@ -66,10 +67,21 @@ def generar_flashcards(
         ui.debug_line(f"Caracteres enviados al modelo: {len(contenido_limpio)}")
         ui.debug_line("Contenido limpio completo:")
         print(f"\n{contenido_limpio}\n")
+        if instrucciones:
+            ui.debug_line(f"Instrucciones adicionales: '{instrucciones}'")
+
+    instrucciones_extra = ""
+    if instrucciones:
+        instrucciones_extra = (
+            f"\nINSTRUCCIONES ADICIONALES DEL USUARIO (tienen prioridad sobre "
+            f"las reglas generales, siempre que no contradigan el formato JSON):\n"
+            f"{instrucciones.strip()}\n"
+        )
 
     prompt = (
         f'Genera exactamente {n} flashcards sobre el siguiente tema: "{titulo}"\n\n'
-        f"NOTAS:\n{contenido_limpio}\n\n"
+        f"NOTAS:\n{contenido_limpio}\n"
+        f"{instrucciones_extra}\n"
         f"Recuerda: responde SOLO con el JSON, sin explicaciones adicionales."
     )
 

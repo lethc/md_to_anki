@@ -43,9 +43,10 @@ def main() -> None:
     inicio_total = time.time()
 
     flashcards = procesar_nota(
-        ruta         = ruta,
-        num_tarjetas = args.num_tarjetas,
-        debug        = args.debug,
+        ruta          = ruta,
+        num_tarjetas  = args.num_tarjetas,
+        instrucciones = args.instrucciones,
+        debug         = args.debug,
     )
 
     if not flashcards:
